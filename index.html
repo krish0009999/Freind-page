@@ -39,9 +39,9 @@ button:hover{transform:translateY(-2px) scale(1.03); box-shadow:0 10px 25px rgba
 .small{opacity:.8; font-size:13px}
 </style>
 </head>
-<body><!-- 🔊 AUDIO (KEEP NAME EXACT: music.mp3 in same folder) --><audio id="bgMusic" src="music.mp3" preload="auto"></audio>
-
-<div class="container" id="page1">
+<body><!-- 🔊 AUDIO (FINAL WORKING FIX) --><audio id="bgMusic" preload="auto" loop playsinline>
+  <source src="Ei Bhalo Ei Kharap (PenduJatt.Com.Se).mp3" type="audio/mpeg">
+</audio><div class="container" id="page1">
   <h2>Who are you? 👀</h2>
   <button onclick="go('page2')">School Friend</button>
   <button onclick="go('page2')">College Friend</button>
@@ -59,34 +59,45 @@ button:hover{transform:translateY(-2px) scale(1.03); box-shadow:0 10px 25px rgba
   <button onclick="go('msg1')">Yes</button>
 </div><div class="container hidden" id="msg1">
   <h2>I wanna tell something 😶‍🌫️</h2>
-  <button onclick="finalStep()">Click</button>
+  <button onclick="finalStep(event)">Click</button>
 </div><div class="container hidden" id="msg2">
   <h2 class="typing">You are cutest dustu friend ever 😺😈😹😻</h2>
   <h3 class="typing delay">Can you be my bestie? 🥹</h3>
 </div><script>
 const pages = document.querySelectorAll('.container');
-function go(id){ pages.forEach(p=>p.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); }
-
-// 🔥 100% PLAY STRATEGY
-function finalStep(){
-  go('msg2');
-  const a = document.getElementById('bgMusic');
-  a.currentTime = 0; a.volume = 1;
-
-  // 1) Try immediate play (user just clicked)
-  a.play().catch(()=>{
-    // 2) Fallback: bind to next interaction anywhere
-    const oncePlay = ()=>{ a.play().catch(()=>{}); document.removeEventListener('pointerdown', oncePlay); };
-    document.addEventListener('pointerdown', oncePlay);
-  });
+function go(id){ 
+  pages.forEach(p=>p.classList.add('hidden')); 
+  document.getElementById(id).classList.remove('hidden'); 
 }
 
-// 3) Extra safety: if user interacts anywhere, try play once
-let tried=false;
-document.addEventListener('pointerdown', ()=>{
-  if(tried) return; tried=true;
-  const a=document.getElementById('bgMusic');
-  a.play().catch(()=>{});
-},{once:true});
+// 🔥 REAL FIX (Mobile + Chrome autoplay issue solved)
+function finalStep(e){
+  go('msg2');
+  const audio = document.getElementById('bgMusic');
+  audio.currentTime = 0;
+
+  // IMPORTANT: resume context inside user click
+  const playPromise = audio.play();
+
+  if (playPromise !== undefined) {
+    playPromise
+      .then(() => {
+        console.log("Audio started");
+      })
+      .catch(() => {
+        // fallback: force play on next touch
+        document.body.addEventListener('touchstart', () => {
+          audio.play();
+        }, { once: true });
+      });
+  }
+}
+
+// extra strong fallback
+window.addEventListener('touchstart', function once(){
+  const audio = document.getElementById('bgMusic');
+  audio.play().catch(()=>{});
+  window.removeEventListener('touchstart', once);
+});
 </script></body>
 </html>
